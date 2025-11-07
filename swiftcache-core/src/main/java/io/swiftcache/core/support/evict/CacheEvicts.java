@@ -1,0 +1,127 @@
+package io.swiftcache.core.support.evict;
+
+import io.swiftcache.api.evict.CacheEvict;
+import io.swiftcache.core.support.evict.impl.*;
+
+/**
+ * 丢弃策略
+ *
+ * @author binbin.hou
+ * @since 0.0.2
+ */
+public final class CacheEvicts {
+
+    private CacheEvicts(){}
+
+    /**
+     * 默认策略
+     *
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 1.0.0
+     */
+    public static <K, V> CacheEvict<K, V> defaultStrategy() {
+        return fifo();
+    }
+
+    /**
+     * 无策略
+     *
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.2
+     */
+    public static <K, V> CacheEvict<K, V> none() {
+        return new CacheEvictNone<>();
+    }
+
+    /**
+     * 先进先出
+     *
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.2
+     */
+    public static <K, V> CacheEvict<K, V> fifo() {
+        return new CacheEvictFifo<>();
+    }
+
+    /**
+     * LRU 驱除策略
+     *
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.11
+     */
+    public static <K, V> CacheEvict<K, V> lru() {
+        return new CacheEvictLru<>();
+    }
+
+    /**
+     * LRU 驱除策略
+     *
+     * 基于双向链表 + map 实现
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.12
+     */
+    public static <K, V> CacheEvict<K, V> lruDoubleListMap() {
+        return new CacheEvictLruDoubleListMap<>();
+    }
+
+    /**
+     * LRU 驱除策略
+     *
+     * 基于 2Q 实现
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.13
+     */
+    public static <K, V> CacheEvict<K, V> lru2Q() {
+        return new CacheEvictLru2Q<>();
+    }
+
+    /**
+     * LRU 驱除策略
+     *
+     * 基于 LRU-2 实现
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.13
+     */
+    public static <K, V> CacheEvict<K, V> lru2() {
+        return new CacheEvictLru2<>();
+    }
+
+    /**
+     * LFU 驱除策略
+     *
+     * 基于 LFU 实现
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.14
+     */
+    public static <K, V> CacheEvict<K, V> lfu() {
+        return new CacheEvictLfu<>();
+    }
+
+    /**
+     * 时钟算法
+     * @param <K> key
+     * @param <V> value
+     * @return 结果
+     * @since 0.0.15
+     */
+    public static <K, V> CacheEvict<K, V> clock() {
+        return new CacheEvictClock<>();
+    }
+
+}
