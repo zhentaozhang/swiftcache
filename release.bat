@@ -1,5 +1,4 @@
 :: 用于 release 当前项目(windows)
-:: author: houbb
 :: LastUpdateTime:  2018-1-22 09:08:52
 :: 用法：双击运行，或者当前路径 cmd 直接输入 release.bat
 
@@ -14,7 +13,7 @@ SET version=1.0.1
 :::: 新版本名
 SET newVersion=1.1.0
 :::: 组织名称
-SET groupName=com.github.houbb
+SET groupName=io.swiftcache
 :::: 项目名称
 SET projectName=cache
 

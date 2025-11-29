@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 丢弃策略-LFU 最少使用频次
- * @author binbin.hou
  * @since 0.0.14
  */
 public class CacheEvictLfu<K,V> extends AbstractCacheEvict<K,V> {

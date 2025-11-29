@@ -13,7 +13,6 @@ import java.util.Map;
 
 /**
  * 基于循环列表的实现
- * @author binbin.hou
  * @since 0.0.15
  */
 public class LruMapCircleList<K,V> implements LruMap<K,V> {

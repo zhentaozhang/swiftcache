@@ -19,7 +19,6 @@ import java.util.Queue;
  * 淘汰策略-LRU 最近最少使用
  *
  * 实现方式：Lru + FIFO
- * @author binbin.hou
  * @since 0.0.13
  */
 public class CacheEvictLru2Q<K,V> extends AbstractCacheEvict<K,V> {

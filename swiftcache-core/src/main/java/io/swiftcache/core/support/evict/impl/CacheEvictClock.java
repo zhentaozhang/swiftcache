@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 /**
  * 淘汰策略-clock 算法
  *
- * @author binbin.hou
  * @since 0.0.15
  */
 public class CacheEvictClock<K,V> extends AbstractCacheEvict<K,V> {

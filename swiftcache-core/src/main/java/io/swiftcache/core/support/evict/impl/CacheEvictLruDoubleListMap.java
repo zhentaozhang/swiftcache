@@ -17,7 +17,6 @@ import java.util.Map;
  * 丢弃策略-LRU 最近最少使用
  *
  * 实现方式：HashMap + list 实现策略
- * @author binbin.hou
  * @since 0.0.12
  */
 public class CacheEvictLruDoubleListMap<K,V> extends AbstractCacheEvict<K,V> {

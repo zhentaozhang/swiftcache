@@ -9,7 +9,6 @@ package io.swiftcache.core.support.evict.impl;//package io.swiftcache.core.suppo
 // * 丢弃策略-LRU 最近最少使用
 // *
 // * 实现方式：LinkedHashMap
-// * @author binbin.hou
 // * @since 0.0.12
 // */
 //public class CacheEvictLruLinkedHashMap<K,V> extends LinkedHashMap<K,V>

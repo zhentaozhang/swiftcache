@@ -12,7 +12,6 @@ import java.util.Arrays;
 /**
  * 刷新
  *
- * @author binbin.hou
  * @since 0.0.5
  */
 public class CacheInterceptorRefresh<K,V> extends AbstractCacheInterceptor<K, V> {

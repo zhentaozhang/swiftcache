@@ -13,7 +13,6 @@ import java.util.AbstractMap;
  * @param <K> key 泛型
  * @param <V> value 泛型
  * @see HashMap
- * @author binbin.hou
  */
 public class MyProgressiveReHashMap<K,V> extends AbstractMap<K,V> implements Map<K,V> {
 

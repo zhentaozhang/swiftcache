@@ -2,7 +2,6 @@ package io.swiftcache.core.exception;
 
 /**
  * 缓存运行时异常
- * @author binbin.hou
  * @since 0.0.1
  */
 public class CacheRuntimeException extends RuntimeException {

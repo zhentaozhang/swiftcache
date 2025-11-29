@@ -12,7 +12,7 @@ snapshot_version=${oldVersion}"-SNAPSHOT"
 ## 新的版本号
 release_version=${oldVersion}
 
-mvn versions:set -DgroupId=com.github.houbb -DartifactId=${projectName} -DoldVersion=${snapshot_version} -DnewVersion=${release_version}
+mvn versions:set -DgroupId=io.swiftcache -DartifactId=${projectName} -DoldVersion=${snapshot_version} -DnewVersion=${release_version}
 mvn -N versions:update-child-modules
 mvn versions:commit
 echo "1. RELEASE ${snapshot_version} TO ${release_version} DONE."
@@ -56,7 +56,7 @@ echo "5. NEW BRANCH DONE."
 # 修改新分支的版本号
 ## snapshot 版本号
 snapshot_new_version=${newVersion}"-SNAPSHOT"
-mvn versions:set -DgroupId=com.github.houbb -DartifactId=${projectName} -DoldVersion=${release_version} -DnewVersion=${snapshot_new_version}
+mvn versions:set -DgroupId=io.swiftcache -DartifactId=${projectName} -DoldVersion=${release_version} -DnewVersion=${snapshot_new_version}
 mvn -N versions:update-child-modules
 mvn versions:commit
 
@@ -73,6 +73,5 @@ echo "============================= RELEASE END..."
 # 1. 赋值权限： chmod +x ./release.sh
 # 2. 执行： ./release.sh
 # Last Update Time: 2018-01-20 12:07:34
-# Author:   houbb
 
 

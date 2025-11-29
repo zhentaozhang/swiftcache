@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 加载策略-文件路径
- * @author binbin.hou
  * @since 0.0.8
  */
 public class CacheLoadDbJson<K,V> extends AbstractCacheLoad<K,V> {

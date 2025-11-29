@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 加载策略-AOF文件模式
- * @author binbin.hou
  * @since 0.0.10
  */
 public class CacheLoadAof<K,V> extends AbstractCacheLoad<K,V> {

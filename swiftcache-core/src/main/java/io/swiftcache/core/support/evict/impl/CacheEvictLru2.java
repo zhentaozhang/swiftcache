@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
  * 淘汰策略-LRU 最近最少使用
  *
  * 实现方式：Lru2
- * @author binbin.hou
  * @since 0.0.13
  */
 public class CacheEvictLru2<K,V> extends AbstractCacheEvict<K,V> {

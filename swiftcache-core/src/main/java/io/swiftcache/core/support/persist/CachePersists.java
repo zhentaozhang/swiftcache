@@ -7,7 +7,6 @@ import io.swiftcache.core.support.persist.impl.CachePersistNone;
 
 /**
  * 缓存持久化工具类
- * @author binbin.hou
  * @since 0.0.8
  */
 public final class CachePersists {

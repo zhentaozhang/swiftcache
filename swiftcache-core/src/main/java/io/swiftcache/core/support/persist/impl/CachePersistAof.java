@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 缓存持久化-AOF 持久化模式
- * @author binbin.hou
  * @since 0.0.10
  */
 public class CachePersistAof<K,V> extends AbstractCachePersistAof<K,V> {

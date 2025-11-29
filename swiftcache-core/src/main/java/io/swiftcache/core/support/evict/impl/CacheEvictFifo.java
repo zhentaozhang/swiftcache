@@ -9,7 +9,6 @@ import java.util.*;
 
 /**
  * 丢弃策略-先进先出
- * @author binbin.hou
  * @since 0.0.2
  */
 public class CacheEvictFifo<K,V> extends AbstractCacheEvict<K,V> {

@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 /**
  * 驱除策略拦截器
  *
- * @author binbin.hou
  * @since 0.0.11
  */
 public class CacheInterceptorEvict<K,V> extends AbstractCacheInterceptor<K, V> {

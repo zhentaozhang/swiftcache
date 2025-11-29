@@ -2,7 +2,6 @@ package io.swiftcache.core.map;
 
 /**
  * hash 工具类
- * @author binbin.hou
  * @since 0.0.1
  */
 public final class HashUtil {

@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 缓存持久化-db-基于 JSON
- * @author binbin.hou
  * @since 0.0.8
  */
 public class CachePersistDbJson<K,V> extends AbstractCachePersist<K,V> {

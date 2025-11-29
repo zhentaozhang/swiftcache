@@ -4,7 +4,6 @@ import java.util.Map;
 
 /**
  * 默认的 map entry
- * @author binbin.hou
  * @since 0.0.1
  */
 public class DefaultMapEntry<K,V> implements Map.Entry<K,V>{

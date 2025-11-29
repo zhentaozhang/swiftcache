@@ -2,7 +2,6 @@ package io.swiftcache.core.model;
 
 /**
  * 循环链表节点
- * @author binbin.hou
  * @since 0.0.15
  * @param <K> key
  * @param <V> value
