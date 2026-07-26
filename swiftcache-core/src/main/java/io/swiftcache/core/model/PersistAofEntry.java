@@ -1,6 +1,6 @@
 package io.swiftcache.core.model;
 
-import io.swiftcache.api.persist.CachePersistAofEntry;
+import io.swiftcache.core.model.CachePersistAofEntry;
 
 import java.util.Arrays;
 
@@ -15,7 +15,7 @@ public class PersistAofEntry implements CachePersistAofEntry {
     }
 
     @Override
-    public Object[] getParams() {
+    public Object[] params() {
         return params;
     }
 
@@ -24,7 +24,7 @@ public class PersistAofEntry implements CachePersistAofEntry {
     }
 
     @Override
-    public String getMethodName() {
+    public String methodName() {
         return methodName;
     }
 

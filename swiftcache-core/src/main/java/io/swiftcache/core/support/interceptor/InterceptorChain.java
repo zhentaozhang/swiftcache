@@ -27,7 +27,7 @@ public class InterceptorChain<K, V> {
         return new Builder<>();
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("unchecked")
     public static <K, V> List<CacheInterceptor<K, V>> defaultStrategy() {
         return InterceptorChain.<K, V>builder()
                 .commonCost()

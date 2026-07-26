@@ -1,54 +1,50 @@
 <div align="center">
-  <h1>SwiftCache</h1>
-  <p><b>轻量级、模块化的本地 Java 缓存库</b> — 8 种淘汰策略 · 4 种过期策略 · AOF/RDB 持久化 · 拦截器链 · 事件监听 · SPI 序列化</p>
 
-  <p>
-    <a href="#核心特性">特性</a> •
-    <a href="#快速开始">快速开始</a> •
-    <a href="#淘汰策略">淘汰策略</a> •
-    <a href="#过期策略">过期策略</a> •
-    <a href="#持久化">持久化</a> •
-    <a href="#项目结构">项目结构</a>
-  </p>
+# SwiftCache
 
-  <p>
-    <img src="https://img.shields.io/badge/Java-17-007396?logo=openjdk&style=flat-square" alt="Java 17">
-    <img src="https://img.shields.io/badge/Maven-3.x-C71A36?logo=apachemaven&style=flat-square" alt="Maven">
-    <img src="https://img.shields.io/badge/license-Apache2-FF0080?style=flat-square" alt="Apache 2.0">
-  </p>
+**轻量级模块化的本地 Java 缓存库**
+
+[![Java 17](https://img.shields.io/badge/Java-17-3c873a?style=flat-square)](#)
+[![CI](https://github.com/zhentaozhang/swiftcache/actions/workflows/maven.yml/badge.svg)](https://github.com/zhentaozhang/swiftcache/actions/workflows/maven.yml)
+
+[概述](#概述) • [快速开始](#快速开始) • [淘汰策略](#淘汰策略) • [过期策略](#过期策略) • [持久化](#持久化) • [架构](#架构) • [基准测试](#基准测试)
+
 </div>
 
----
+## 概述
 
-## 核心特性
+**SwiftCache** 是一个面向 Java 17 的模块化本地缓存库，支持 8 种淘汰策略、4 种过期策略、AOF/RDB 持久化、可插拔拦截器链和事件监听。与 `ConcurrentHashMap` 不同，它在缓存语义层面内置了淘汰触发、过期扫描和持久化能力，无需自行组合多个组件。
 
-| 维度 | 能力 |
-|------|------|
-| **淘汰策略** | FIFO、LRU、LFU、Clock、LRU-2、LRU-2Q、双链表 LRU、无淘汰 |
-| **过期策略** | Redis 式随机采样、排序过期、顺序过期、无过期 |
-| **持久化** | AOF 追加日志、RDB JSON 快照、无持久化 |
-| **数据加载** | AOF 恢复、RDB 恢复、自定义加载器 |
-| **拦截器链** | 可插拔 before/after 钩子：耗时统计、淘汰触发、淘汰跟踪、AOF 记录、惰性刷新、统计采集 |
-| **事件监听** | `CacheListener` SPI — PUT、REMOVE、EXPIRE、EVICT |
-| **统计信息** | 命中次数、未命中次数、淘汰次数、写入次数、命中率 |
-| **序列化 SPI** | 可插拔序列化，默认 Jackson |
-| **线程安全** | `ReentrantReadWriteLock` 读写锁、`AtomicInteger`/`AtomicBoolean` 原子计数器、`ConcurrentLinkedQueue` AOF 缓冲区、`synchronized` 淘汰策略 |
+**核心特性：**
 
----
+- **8 种淘汰策略** — FIFO、LRU、LFU、Clock、LRU-2、LRU-2Q、双链表 LRU、无淘汰
+- **4 种过期策略** — Redis 式随机采样、排序过期、顺序过期、无过期
+- **AOF/RDB 持久化** — 实时追加日志与定时全量快照，支持重启恢复
+- **`CacheBs` Builder** — Fluent API，一行组装缓存实例
+- **拦截器链** — 可插拔 before/after 钩子：耗时统计、淘汰触发、AOF 记录、惰性刷新、统计采集
+- **事件监听** — `CacheListener` SPI，支持 `PUT` / `REMOVE` / `EXPIRE` / `EVICT`
+- **运行时指标** — 命中/未命中/淘汰/写入计数 + 命中率
+- **线程安全** — `ReentrantReadWriteLock` 读写锁 + `AtomicInteger`/`AtomicBoolean` 原子状态
 
 ## 快速开始
 
-### Maven 依赖
-
 ```xml
 <dependency>
-    <groupId>io.swiftcache</groupId>
-    <artifactId>swiftcache-core</artifactId>
-    <version>1.0.1</version>
+  <groupId>io.swiftcache</groupId>
+  <artifactId>swiftcache-core</artifactId>
+  <version>1.0.1</version>
 </dependency>
 ```
 
-### 基本使用
+需 Java 17+ 和 Maven：
+
+```bash
+git clone https://github.com/zhentaozhang/swiftcache.git
+cd swiftcache
+mvn package
+```
+
+### 基础用法
 
 ```java
 Cache<String, String> cache = CacheBs.<String, String>newInstance()
@@ -58,7 +54,6 @@ Cache<String, String> cache = CacheBs.<String, String>newInstance()
 cache.put("A", "hello");
 cache.put("B", "world");
 cache.put("C", "foo");
-
 cache.get("A");                  // "hello"
 cache.size();                    // 3
 
@@ -66,21 +61,23 @@ cache.put("D", "bar");           // 触发淘汰（默认 FIFO）
 cache.containsKey("A");          // false
 ```
 
-### 过期时间
+完整示例见 [`CacheDemo.java`](swiftcache-test/src/test/java/io/swiftcache/core/demo/CacheDemo.java)。
+
+### Builder 配置
 
 ```java
 Cache<String, String> cache = CacheBs.<String, String>newInstance()
-        .size(3)
+        .size(100)
+        .evict(CacheEvicts.<String, String>lfu())
+        .expire(CacheExpires.<String, String>random())
+        .persist(CachePersists.<String, String>dbJson("cache.rdb"))
+        .load(CacheLoads.<String, String>dbJson("cache.rdb"))
+        .listener(event -> System.out.println(event.type() + " " + event.key()))
         .build();
-
-cache.put("A", "hello");
-cache.expireAt("A", System.currentTimeMillis() + 1000);
-
-Thread.sleep(1500);
-cache.size();                    // 0
 ```
 
----
+> [!TIP]
+> 未配置的组件均使用默认策略（FIFO 淘汰 + 随机过期 + 无持久化）。
 
 ## 淘汰策略
 
@@ -88,7 +85,6 @@ cache.size();                    // 0
 
 ```java
 Cache<String, String> cache = CacheBs.<String, String>newInstance()
-        .size(3)
         .evict(CacheEvicts.<String, String>lfu())
         .build();
 ```
@@ -96,15 +92,13 @@ Cache<String, String> cache = CacheBs.<String, String>newInstance()
 | 工厂方法 | 策略 | 说明 |
 |----------|------|------|
 | `fifo()` | FIFO | 先进先出，基于 `LinkedHashSet` |
-| `lru()` | LRU | 最近最少使用，基于 `LinkedHashMap`（access-order） |
-| `lruDoubleListMap()` | 双链表 LRU | HashMap + 双向链表，性能优于朴素 LRU |
-| `lru2Q()` | LRU-2Q | 双队列变体，命中率更高 |
-| `lru2()` | LRU-2 | 频率感知变体 |
+| `lru()` | LRU | 最近最少使用，`LinkedHashMap` access-order |
 | `lfu()` | LFU | 最不经常使用，频率 map + 最小频率追踪 |
-| `clock()` | Clock | 第二次机会时钟算法 |
+| `clock()` | Clock | 第二次机会时钟算法，循环链表 |
+| `lru2()` | LRU-2 | 频率感知变体 |
+| `lru2Q()` | LRU-2Q | 双队列变体，命中率更高 |
+| `lruDoubleListMap()` | 双链表 LRU | HashMap + 双向链表 |
 | `none()` | 无淘汰 | 永不淘汰 |
-
----
 
 ## 过期策略
 
@@ -118,14 +112,15 @@ Cache<String, String> cache = CacheBs.<String, String>newInstance()
 
 | 工厂方法 | 策略 | 行为 |
 |----------|------|------|
-| `random()` | 随机采样 | Redis 式：随机采样 + 惰性删除 + 定时扫描。两阶段扫描（快模式检查边界 + 全量扫描） |
-| `sort()` | 排序过期 | 基于 `TreeMap` 维护有序过期队列，确定性强但占用额外空间 |
-| `sequence()` | 顺序过期 | 顺序遍历扫描过期 key |
+| `random()` | 随机采样 | Redis 式随机采样 + 惰性删除 + 定时扫描，支持快模式 |
+| `sort()` | 排序过期 | `TreeMap` 有序过期队列，确定性强 |
+| `sequence()` | 顺序过期 | 按迭代顺序遍历扫描 |
 | `none()` | 无过期 | 永不过期 |
 
 过期线程池为命名守护线程（`cache-expire-*`），JVM 退出时自动清理。
 
----
+> [!TIP]
+> `random()` 策略在大量 key 的场景下吞吐更稳定；`sort()` 策略过期精度更高、延迟更可预测。
 
 ## 持久化
 
@@ -149,9 +144,14 @@ Cache<String, String> cache2 = CacheBs.<String, String>newInstance()
 | **AOF** | 实时追加每条写操作日志 | 写入频繁、需高持久性 |
 | **无** | 不持久化 | 纯缓存场景 |
 
-持久化线程池为命名守护线程（`cache-persist-*`），JVM 退出时自动清理。
+RDB 支持自定义调度周期：
 
----
+```java
+// 每 30 秒全量快照
+CachePersists.<String, String>dbJson("cache.rdb", 30, TimeUnit.SECONDS)
+```
+
+持久化线程池为命名守护线程（`cache-persist-*`），JVM 退出时自动清理。
 
 ## 事件监听
 
@@ -162,126 +162,161 @@ Cache<String, String> cache = CacheBs.<String, String>newInstance()
         .listener(events::add)
         .build();
 
-cache.put("A", "1");   // 触发 CacheEventType.PUT
-cache.get("A");        // 读操作不触发事件
-cache.remove("A");     // 触发 CacheEventType.REMOVE
+cache.put("A", "1");     // PUT
+cache.remove("A");       // REMOVE
 ```
 
 支持的事件类型：`PUT`、`REMOVE`、`EXPIRE`、`EVICT`。
 
----
-
 ## 缓存统计
 
 ```java
-Cache<String, String> cache = CacheBs.<String, String>newInstance()
-        .build();
-
+Cache<String, String> cache = CacheBs.<String, String>newInstance().build();
 cache.put("A", "1");
-cache.get("A");        // 命中
-cache.get("MISS");     // 未命中
+cache.get("A");              // 命中
+cache.get("MISS");           // 未命中
 
 CacheStats stats = cache.cacheContext().stats();
-stats.hitCount();      // 1
-stats.missCount();     // 1
-stats.putCount();      // 1
-stats.hitRate();       // 0.5
+stats.hitCount();            // 1
+stats.missCount();           // 1
+stats.putCount();            // 1
+stats.hitRate();             // 0.5
 ```
 
----
+## 架构
 
-## 序列化 SPI
+### 模块结构
 
-`CacheSerializer` 接口支持自定义序列化实现，默认内置 Jackson：
+SwiftCache 采用三模块分层设计：
 
-```java
-public interface CacheSerializer {
-    <T> String serialize(T object);
-    <T> T deserialize(String json, Class<T> type);
-}
+```mermaid
+flowchart TD
+    API["swiftcache-api<br/><i>SPI 接口层</i>"]
+    CORE["swiftcache-core<br/><i>核心实现层</i>"]
+    TEST["swiftcache-test<br/><i>测试与示例</i>"]
+
+    API -->|"实现"| CORE
+    CORE -->|"测试"| TEST
+
+    classDef api fill:#90EE90,stroke:#333,stroke-width:2px,color:darkgreen
+    classDef core fill:#87CEEB,stroke:#333,stroke-width:2px,color:darkblue
+    classDef test fill:#E6E6FA,stroke:#333,stroke-width:2px,color:darkblue
+
+    class API api
+    class CORE core
+    class TEST test
 ```
 
-所有持久化和 AOF 加载类（`CachePersistAof`、`CachePersistDbJson`、`CacheLoadAof`、`CacheLoadDbJson`）内部均通过此 SPI 完成序列化。
+### 包结构
 
----
-
-## 项目结构
-
-```
-swiftcache/
-├── swiftcache-api/                  # SPI 接口层
-│   └── src/main/java/io/swiftcache/
-│       ├── api/Cache.java           # 核心缓存接口
-│       ├── api/CacheEntry.java      # KV 条目
-│       ├── api/context/             # CacheContext — 运行时配置
-│       ├── api/evict/               # CacheEvict — 淘汰策略 SPI
-│       ├── api/expire/              # CacheExpire — 过期策略 SPI
-│       ├── api/interceptor/         # CacheInterceptor + 上下文
-│       ├── api/listener/            # CacheListener + CacheEvent
-│       ├── api/load/                # CacheLoad — 加载器 SPI
-│       ├── api/persist/             # CachePersist + AOF 条目
-│       ├── api/serializer/          # CacheSerializer SPI
-│       └── api/stats/               # CacheStats
-│
-├── swiftcache-core/                 # 核心实现层
-│   └── src/main/java/io/swiftcache/
-│       ├── core/bs/CacheBs.java     # Fluent Builder
-│       ├── core/core/               # DefaultCache + DefaultCacheContext
-│       ├── core/model/              # 数据模型（FreqNode、CircleListNode 等）
-│       ├── core/support/evict/      # 8 种淘汰策略实现
-│       ├── core/support/expire/     # 4 种过期策略实现
-│       ├── core/support/interceptor/ # 拦截器链 + 6 个拦截器
-│       ├── core/support/load/       # 3 种加载器实现
-│       ├── core/support/persist/    # 3 种持久化实现
-│       ├── core/support/serializer/ # JacksonSerializer
-│       └── core/support/struct/     # LRU 数据结构
-│
-└── swiftcache-test/                 # 测试（JUnit 5 + AssertJ）
-```
-
----
-
-## 设计说明
-
-### Builder 模式
-
-`CacheBs` 提供 Fluent Builder，将所有可配置组件按职责编排：
-
-```
-CacheBs.newInstance()
-  .size(int)
-  .evict(CacheEvict)
-  .expire(CacheExpire)
-  .load(CacheLoad)
-  .persist(CachePersist)
-  .listener(CacheListener)
-  .interceptorList(List<CacheInterceptor>)
-  .build()
-```
+| 包 | 职责 |
+|---|---|
+| `api` | `Cache` 核心接口、`CacheEntry`、`CacheContext` |
+| `api/evict` | `CacheEvict` — 淘汰策略 SPI |
+| `api/expire` | `CacheExpire` — 过期策略 SPI |
+| `api/interceptor` | `CacheInterceptor` + 拦截器上下文 |
+| `api/listener` | `CacheListener` + `CacheEvent` / `CacheEventType` |
+| `api/load` | `CacheLoad` — 数据加载 SPI |
+| `api/persist` | `CachePersist` — 持久化 SPI |
+| `api/serializer` | `CacheSerializer` — 序列化接口 |
+| `api/stats` | `CacheStats` — 统计接口 |
+| `core/bs` | `CacheBs` — Fluent Builder |
+| `core/core` | `DefaultCache` + `DefaultCacheContext` |
+| `core/model` | 数据模型（`FreqNode`、`CircleListNode`、`PersistRdbEntry` 等） |
+| `core/support/evict` | 8 种淘汰策略实现 |
+| `core/support/expire` | 4 种过期策略实现 |
+| `core/support/interceptor` | 拦截器链 + 6 个内置拦截器 |
+| `core/support/load` | AOF/RDB/空 加载器 |
+| `core/support/persist` | AOF/RDB/空 持久化实现 |
+| `core/support/serializer` | `JacksonSerializer` |
+| `core/support/struct` | LRU 数据结构（循环链表、双链表） |
 
 ### 拦截器链
 
-每次缓存操作经过可配置的拦截器链执行 before/after 钩子。默认链包含：
+每次缓存操作沿拦截器链依次经过 before → 核心操作 → after 三个阶段：
 
-1. **CacheInterceptorCommonCost** — 方法入出口日志 + 耗时统计
-2. **CacheInterceptorEvict** — `put` 前触发淘汰
-3. **EvictTrackingInterceptor** — 读写后更新淘汰策略访问记录
-4. **CacheInterceptorAof** — 写操作追加到 AOF 日志
-5. **CacheInterceptorRefresh** — 惰性过期删除
-6. **StatsInterceptor** — 采集命中/未命中/写入/淘汰统计
+```mermaid
+flowchart LR
+    CALL["Cache.put(key,value)"]
+    BEFORE["1️⃣ CacheInterceptorCommonCost.before"]
+    EVICT_BEFORE["2️⃣ CacheInterceptorEvict.before"]
+    OPERATION["📦 cacheMap.put(key,value)"]
+    EVICT_AFTER["3️⃣ EvictTrackingInterceptor.after"]
+    AOF["4️⃣ CacheInterceptorAof.after"]
+    REFRESH["5️⃣ CacheInterceptorRefresh.after"]
+    STATS["6️⃣ StatsInterceptor.after"]
+    COST_AFTER["1️⃣ CacheInterceptorCommonCost.after"]
+    DONE["✅ done"]
+
+    CALL --> BEFORE
+    BEFORE --> EVICT_BEFORE
+    EVICT_BEFORE --> OPERATION
+    OPERATION --> EVICT_AFTER
+    EVICT_AFTER --> AOF
+    AOF --> REFRESH
+    REFRESH --> STATS
+    STATS --> COST_AFTER
+    COST_AFTER --> DONE
+
+    classDef interceptor fill:#FFD700,stroke:#333,stroke-width:1px,color:black
+    classDef core fill:#87CEEB,stroke:#333,stroke-width:2px,color:darkblue
+
+    class BEFORE,EVICT_BEFORE,EVICT_AFTER,AOF,REFRESH,STATS,COST_AFTER interceptor
+    class CALL,OPERATION core
+```
+
+| 顺序 | 拦截器 | 阶段 | 职责 |
+|------|--------|------|------|
+| 1 | `CacheInterceptorCommonCost` | before + after | 方法和入参日志、执行耗时统计 |
+| 2 | `CacheInterceptorEvict` | before | `put` 前触发淘汰 |
+| 3 | `EvictTrackingInterceptor` | after | 更新淘汰策略的访问记录 |
+| 4 | `CacheInterceptorAof` | after | 写操作追加到 AOF 缓冲区 |
+| 5 | `CacheInterceptorRefresh` | after | 惰性过期刷新 |
+| 6 | `StatsInterceptor` | after | 采集命中/未命中/写入统计 |
 
 ### 线程安全
 
-| 组件 | 机制 |
-|------|------|
-| DefaultCache（get/size/containsKey） | `ReentrantReadWriteLock.ReadLock` |
-| DefaultCache（put/remove/expireAt） | `ReentrantReadWriteLock.WriteLock` |
-| CacheEvictFifo / CacheEvictLru | `synchronized` 方法 |
-| CacheEvictLfu.minFreq | `AtomicInteger` |
-| CachePersistAof.bufferList | `ConcurrentLinkedQueue` |
-| CacheExpireRandom.fastMode | `AtomicBoolean` |
-| 定时线程池 | 命名守护线程（`ThreadFactory`）+ JVM shutdown hook 清理 |
-| CacheStats 计数器 | `AtomicLong` |
+```mermaid
+flowchart LR
+    RW["ReentrantReadWriteLock"]
+    SYNC["synchronized"]
+    ATOMIC["AtomicInteger / AtomicBoolean"]
+
+    RW -->|ReadLock| READ["get / size / containsKey / keySet / isEmpty"]
+    RW -->|WriteLock| WRITE["put / remove / expireAt"]
+    SYNC -->|方法级| FIFO["CacheEvictFifo"]
+    ATOMIC -->|minFreq| LFU["CacheEvictLfu.minFreq"]
+    ATOMIC -->|fastMode| RANDOM["CacheExpireRandom.fastMode"]
+
+    classDef lock fill:#90EE90,stroke:#333,stroke-width:1px,color:darkgreen
+    classDef sync fill:#FFD700,stroke:#333,stroke-width:1px,color:black
+    classDef atomic fill:#87CEEB,stroke:#333,stroke-width:1px,color:darkblue
+
+    class RW lock
+    class SYNC sync
+    class ATOMIC atomic
+```
+
+## 基准测试
+
+JMH 吞吐量基准测试结果（JDK 23.0.2，10 CPUs）：
+
+```
+Benchmark                        Mode  Cnt         Score          Units
+put-100K                        thrpt    2   3,764,830        ops/s
+get-hit-100K                    thrpt    2   5,259,421        ops/s
+evict-lfu                       thrpt    2   2,927,529        ops/s
+expire-sort                     thrpt    2   1,543,994        ops/s
+aof-100K                        thrpt    2   3,070,707        ops/s
+concurrent-write-4t             thrpt    2   2,296,030        ops/s
+rdb-100K                         thrpt    2      31             ms
+```
+
+本地复现基准测试：
+
+```bash
+mvn test -pl swiftcache-test -Dtest=CacheBenchmark -q
+```
 
 ### 技术栈
 

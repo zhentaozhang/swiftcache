@@ -5,6 +5,8 @@ import io.swiftcache.core.support.persist.impl.CachePersistAof;
 import io.swiftcache.core.support.persist.impl.CachePersistDbJson;
 import io.swiftcache.core.support.persist.impl.CachePersistNone;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * 缓存持久化工具类
  * @since 0.0.8
@@ -45,6 +47,20 @@ public final class CachePersists {
      */
     public static <K,V> CachePersist<K,V> dbJson(final String path) {
         return new CachePersistDbJson<>(path);
+    }
+
+    /**
+     * DB json 操作，可配置持久化周期
+     * @param <K> key
+     * @param <V> value
+     * @param path 文件路径
+     * @param period 周期时长
+     * @param timeUnit 周期单位
+     * @return 结果
+     * @since 1.0.2
+     */
+    public static <K,V> CachePersist<K,V> dbJson(final String path, long period, TimeUnit timeUnit) {
+        return new CachePersistDbJson<>(path, period, period, timeUnit);
     }
 
     /**

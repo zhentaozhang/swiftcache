@@ -17,7 +17,7 @@ public class CacheEvictFifo<K,V> extends AbstractCacheEvict<K,V> {
      * queue 信息
      * @since 0.0.2
      */
-    private final Set<K> accessOrder = new LinkedHashSet<>();;
+    private final Set<K> accessOrder = new LinkedHashSet<>();
 
     @Override
     public synchronized CacheEntry<K,V> evict(CacheContext<K, V> context, final K newKey) {

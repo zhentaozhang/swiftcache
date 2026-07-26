@@ -1,80 +1,102 @@
 package io.swiftcache.core.support.persist.impl;
 
-import io.swiftcache.api.persist.CachePersistAofEntry;
+import io.swiftcache.api.expire.CacheExpire;
+import io.swiftcache.api.persist.CachePersist;
+import io.swiftcache.core.model.CachePersistAofEntry;
 import io.swiftcache.api.serializer.CacheSerializer;
 import io.swiftcache.core.support.persist.AbstractCachePersistAof;
 import io.swiftcache.core.support.serializer.JacksonSerializer;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * 缓存持久化-AOF 持久化模式
- * @since 0.0.10
- */
 public class CachePersistAof<K,V> extends AbstractCachePersistAof<K,V> {
 
     private static final Logger log = LoggerFactory.getLogger(CachePersistAof.class);
     private static final CacheSerializer SERIALIZER = new JacksonSerializer();
 
-    /**
-     * 缓存列表
-     * @since 0.0.10
-     */
-    private final ConcurrentLinkedQueue<String> bufferList = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CachePersistAofEntry> bufferList = new ConcurrentLinkedQueue<>();
 
-    /**
-     * 数据持久化路径
-     * @since 0.0.10
-     */
     private final String dbPath;
+
+    private BufferedWriter fileWriter;
 
     public CachePersistAof(String dbPath) {
         this.dbPath = dbPath;
     }
 
-    /**
-     * 添加文件内容到 buffer 列表中
-     * @param aofEntry entry 信息
-     * @since 0.0.10
-     */
     @Override
     public boolean append(final CachePersistAofEntry aofEntry) {
         if(aofEntry != null) {
-            String json = SERIALIZER.serialize(aofEntry);
-            log.debug("[Cache] AOF append json={}", json);
-            bufferList.add(json);
-
+            bufferList.add(aofEntry);
             return true;
         }
-
         return false;
     }
 
     @Override
-    protected void doPersist() {
-        log.info("[Cache] 开始 AOF 持久化到文件");
-        // 1. 创建文件
+    protected synchronized void doPersist() {
+        if (fileWriter == null) {
+            return;
+        }
+
+        List<CachePersistAofEntry> snapshot = new ArrayList<>();
+        while (true) {
+            CachePersistAofEntry entry = bufferList.poll();
+            if (entry == null) break;
+            snapshot.add(entry);
+        }
+        if (snapshot.isEmpty()) {
+            return;
+        }
+
         try {
-            if(!Files.exists(Path.of(dbPath))) {
-                Files.createFile(Path.of(dbPath));
+            for (CachePersistAofEntry entry : snapshot) {
+                fileWriter.write(SERIALIZER.serialize(entry));
+                fileWriter.newLine();
             }
-            // 2. 持久化追加到文件中
-            List<String> snapshot = List.copyOf(bufferList);
-            Files.write(Path.of(dbPath), snapshot, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            fileWriter.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        bufferList.removeIf(s -> true);
-        log.info("[Cache] 完成 AOF 持久化到文件");
+    @Override
+    public CachePersist<K, V> init(Map<K, V> map, CacheExpire<K, V> expire) {
+        try {
+            Path path = Path.of(dbPath);
+            Path parent = path.getParent();
+            if (parent != null && Files.notExists(parent)) {
+                Files.createDirectories(parent);
+            }
+            fileWriter = Files.newBufferedWriter(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        super.init(map, expire);
+        return this;
+    }
+
+    @Override
+    protected void cleanup() {
+        if (fileWriter != null) {
+            try {
+                fileWriter.close();
+            } catch (IOException e) {
+                log.error("关闭 AOF 文件失败", e);
+            }
+            fileWriter = null;
+        }
     }
 
 }

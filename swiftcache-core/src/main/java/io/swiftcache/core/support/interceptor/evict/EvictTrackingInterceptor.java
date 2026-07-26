@@ -3,7 +3,7 @@ package io.swiftcache.core.support.interceptor.evict;
 import io.swiftcache.api.context.CacheContext;
 import io.swiftcache.api.evict.CacheEvict;
 import io.swiftcache.api.interceptor.CacheInterceptorContext;
-import io.swiftcache.core.constant.enums.CacheInterceptorType;
+import io.swiftcache.core.support.interceptor.CacheInterceptorType;
 import io.swiftcache.core.support.interceptor.AbstractCacheInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ public class EvictTrackingInterceptor<K,V> extends AbstractCacheInterceptor<K, V
 
     @Override
     protected String getType() {
-        return null;
+        throw new UnsupportedOperationException("EvictTrackingInterceptor uses custom match()");
     }
 
     @Override

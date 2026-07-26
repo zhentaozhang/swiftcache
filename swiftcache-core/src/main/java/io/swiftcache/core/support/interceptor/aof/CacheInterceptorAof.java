@@ -2,7 +2,7 @@ package io.swiftcache.core.support.interceptor.aof;
 
 import io.swiftcache.api.interceptor.CacheInterceptorContext;
 import io.swiftcache.api.persist.CachePersist;
-import io.swiftcache.core.constant.enums.CacheInterceptorType;
+import io.swiftcache.core.support.interceptor.CacheInterceptorType;
 import io.swiftcache.core.model.PersistAofEntry;
 import io.swiftcache.core.support.interceptor.AbstractCacheInterceptor;
 import io.swiftcache.core.support.persist.AbstractCachePersistAof;

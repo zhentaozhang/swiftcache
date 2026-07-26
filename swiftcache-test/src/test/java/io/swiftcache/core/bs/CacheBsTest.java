@@ -155,19 +155,6 @@ class CacheBsTest {
     }
 
     /**
-     * 加载接口测试
-     * @since 0.0.8
-     */
-    @Test
-    void loadDbJsonTest() {
-        Cache<String, String> cache = CacheBs.<String,String>newInstance()
-                .load(CacheLoads.<String, String>dbJson("1.rdb"))
-                .build();
-
-        assertThat(cache.size()).isEqualTo(2);
-    }
-
-    /**
      * 慢日志接口测试
      * @since 0.0.9
      */
@@ -197,21 +184,6 @@ class CacheBsTest {
 
         TimeUnit.SECONDS.sleep(1);
     }
-
-    /**
-     * 加载 AOF 接口测试
-     * @since 0.0.10
-     */
-    @Test
-    void loadAofTest() throws InterruptedException {
-        Cache<String, String> cache = CacheBs.<String,String>newInstance()
-                .load(CacheLoads.<String, String>aof("default.aof"))
-                .build();
-
-        assertThat(cache.size()).isEqualTo(1);
-        System.out.println(cache.keySet());
-    }
-
 
     /**
      * LRU 驱除策略测试
@@ -346,6 +318,48 @@ class CacheBsTest {
 
         assertThat(cache.size()).isEqualTo(3);
         System.out.println(cache.keySet());
+    }
+
+    @Test
+    void sortExpireTest() throws InterruptedException {
+        Cache<String, String> cache = CacheBs.<String,String>newInstance()
+                .size(5)
+                .expire(CacheExpires.<String, String>sort())
+                .build();
+
+        cache.put("1", "1");
+        cache.put("2", "2");
+        long now = System.currentTimeMillis();
+        cache.expireAt("1", now + 40);
+        cache.expireAt("2", now + 120);
+
+        assertThat(cache.size()).isEqualTo(2);
+
+        TimeUnit.MILLISECONDS.sleep(60);
+        assertThat(cache.containsKey("1")).isFalse();
+        assertThat(cache.containsKey("2")).isTrue();
+
+        TimeUnit.MILLISECONDS.sleep(100);
+        assertThat(cache.containsKey("2")).isFalse();
+    }
+
+    @Test
+    void lfuRemoveKeyTest() {
+        Cache<String, String> cache = CacheBs.<String,String>newInstance()
+                .size(3)
+                .evict(CacheEvicts.<String, String>lfu())
+                .build();
+
+        cache.put("A", "1");
+        cache.put("B", "2");
+        cache.put("C", "3");
+
+        cache.get("A");
+        cache.get("A");
+        cache.get("B");
+        cache.remove("A");
+
+        assertThat(cache.size()).isEqualTo(2);
     }
 
     @Test

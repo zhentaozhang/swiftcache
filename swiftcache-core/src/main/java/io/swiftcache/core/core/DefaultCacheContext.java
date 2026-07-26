@@ -30,7 +30,7 @@ public class DefaultCacheContext<K,V> implements CacheContext<K, V> {
 
     private List<CacheInterceptor<K,V>> interceptorList;
 
-    private final CacheStats stats = new CacheStats();
+    private final DefaultCacheStats stats = new DefaultCacheStats();
 
     private List<CacheListener<K, V>> listeners = new ArrayList<>();
 

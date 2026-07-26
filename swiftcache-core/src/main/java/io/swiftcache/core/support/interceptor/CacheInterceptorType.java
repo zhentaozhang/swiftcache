@@ -1,4 +1,4 @@
-package io.swiftcache.core.constant.enums;
+package io.swiftcache.core.support.interceptor;
 
 /**
  * 拦截器类别

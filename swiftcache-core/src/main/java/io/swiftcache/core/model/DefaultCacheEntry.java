@@ -30,7 +30,7 @@ public class DefaultCacheEntry<K,V> implements CacheEntry<K,V> {
 
     @Override
     public String toString() {
-        return "EvictEntry{" +
+        return "DefaultCacheEntry{" +
                 "key=" + key +
                 ", value=" + value +
                 '}';

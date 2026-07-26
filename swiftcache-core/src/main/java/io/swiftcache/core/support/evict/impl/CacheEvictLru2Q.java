@@ -11,9 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Set;
 
 /**
  * 淘汰策略-LRU 最近最少使用
@@ -29,7 +30,7 @@ public class CacheEvictLru2Q<K,V> extends AbstractCacheEvict<K,V> {
      * 第一次访问的队列
      * @since 0.0.13
      */
-    private Queue<K> firstQueue;
+    private Set<K> firstQueue;
 
     /**
      * 头结点
@@ -53,7 +54,7 @@ public class CacheEvictLru2Q<K,V> extends AbstractCacheEvict<K,V> {
     private Map<K, CircleListNode<K,V>> lruIndexMap;
 
     public CacheEvictLru2Q() {
-        this.firstQueue = new LinkedList<>();
+        this.firstQueue = new LinkedHashSet<>();
         this.lruIndexMap = new HashMap<>();
         this.head = new CircleListNode<>();
         this.tail = new CircleListNode<>();
@@ -71,7 +72,9 @@ public class CacheEvictLru2Q<K,V> extends AbstractCacheEvict<K,V> {
 
             //1. firstQueue 不为空，优先移除队列中元素
             if(!firstQueue.isEmpty()) {
-                evictKey = firstQueue.remove();
+                Iterator<K> iter = firstQueue.iterator();
+                evictKey = iter.next();
+                iter.remove();
             } else {
                 // 获取尾巴节点的前一个元素
                 CircleListNode<K,V> tailPre = this.tail.pre();

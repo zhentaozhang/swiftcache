@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractCacheExpire<K,V> implements CacheExpire<K,V> {
 
+    private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
+
     protected Map<K, V> cacheMap;
 
     protected final Map<K, Long> expireMap = new HashMap<>();
@@ -24,7 +26,7 @@ public abstract class AbstractCacheExpire<K,V> implements CacheExpire<K,V> {
 
     protected void initExecutorService() {
         ThreadFactory tf = r -> {
-            Thread t = new Thread(r, "cache-expire-" + System.nanoTime());
+            Thread t = new Thread(r, "cache-expire-" + THREAD_COUNTER.getAndIncrement());
             t.setDaemon(true);
             return t;
         };

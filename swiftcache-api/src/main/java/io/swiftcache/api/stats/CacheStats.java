@@ -1,37 +1,23 @@
 package io.swiftcache.api.stats;
 
-import java.util.concurrent.atomic.AtomicLong;
+public interface CacheStats {
 
-public class CacheStats {
+    void recordHit();
 
-    private final AtomicLong hitCount = new AtomicLong();
-    private final AtomicLong missCount = new AtomicLong();
-    private final AtomicLong evictCount = new AtomicLong();
-    private final AtomicLong putCount = new AtomicLong();
+    void recordMiss();
 
-    public void recordHit() {
-        hitCount.incrementAndGet();
-    }
+    void recordEvict();
 
-    public void recordMiss() {
-        missCount.incrementAndGet();
-    }
+    void recordPut();
 
-    public void recordEvict() {
-        evictCount.incrementAndGet();
-    }
+    long hitCount();
 
-    public void recordPut() {
-        putCount.incrementAndGet();
-    }
+    long missCount();
 
-    public long hitCount() { return hitCount.get(); }
-    public long missCount() { return missCount.get(); }
-    public long evictCount() { return evictCount.get(); }
-    public long putCount() { return putCount.get(); }
+    long evictCount();
 
-    public double hitRate() {
-        long total = hitCount() + missCount();
-        return total == 0 ? 0.0 : (double) hitCount() / total;
-    }
+    long putCount();
+
+    double hitRate();
+
 }

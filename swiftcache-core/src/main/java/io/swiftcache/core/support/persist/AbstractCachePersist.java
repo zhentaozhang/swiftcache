@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 缓存持久化-适配器模式
@@ -22,13 +23,15 @@ public abstract class AbstractCachePersist<K,V> implements CachePersist<K,V> {
     protected Map<K, V> map;
     protected CacheExpire<K, V> expire;
 
+    private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
+
     protected ScheduledExecutorService executorService;
 
     protected abstract void doPersist();
 
     protected void initExecutorService() {
         ThreadFactory tf = r -> {
-            Thread t = new Thread(r, "cache-persist-" + System.nanoTime());
+            Thread t = new Thread(r, "cache-persist-" + THREAD_COUNTER.getAndIncrement());
             t.setDaemon(true);
             return t;
         };
@@ -50,6 +53,9 @@ public abstract class AbstractCachePersist<K,V> implements CachePersist<K,V> {
         }, delay(), period(), timeUnit());
     }
 
+    protected void cleanup() {
+    }
+
     @Override
     public CachePersist<K, V> init(Map<K, V> map, CacheExpire<K, V> expire) {
         this.map = map;
@@ -60,6 +66,7 @@ public abstract class AbstractCachePersist<K,V> implements CachePersist<K,V> {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             if (executorService != null) executorService.shutdownNow();
+            cleanup();
         }));
 
         return this;

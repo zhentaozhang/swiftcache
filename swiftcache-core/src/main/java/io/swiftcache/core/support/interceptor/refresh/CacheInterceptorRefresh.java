@@ -2,7 +2,7 @@ package io.swiftcache.core.support.interceptor.refresh;
 
 import io.swiftcache.api.context.CacheContext;
 import io.swiftcache.api.interceptor.CacheInterceptorContext;
-import io.swiftcache.core.constant.enums.CacheInterceptorType;
+import io.swiftcache.core.support.interceptor.CacheInterceptorType;
 import io.swiftcache.core.support.interceptor.AbstractCacheInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

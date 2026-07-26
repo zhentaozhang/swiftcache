@@ -23,7 +23,7 @@ public class CacheExpireSort<K,V> extends AbstractCacheExpire<K,V> {
      * 使用按照时间排序的缓存处理。
      * @since 0.0.3
      */
-    private final Map<Long, List<K>> sortMap = new TreeMap<>((o1, o2) -> (int) (o1 - o2));
+    private final Map<Long, List<K>> sortMap = new TreeMap<>(Long::compare);
 
     @Override
     protected void expireScheduleStart() {
@@ -46,13 +46,15 @@ public class CacheExpireSort<K,V> extends AbstractCacheExpire<K,V> {
 
             //2. 获取 key 进行处理
             int count = 0;
-            for(Map.Entry<Long, List<K>> entry : sortMap.entrySet()) {
+            Iterator<Map.Entry<Long, List<K>>> entryIterator = sortMap.entrySet().iterator();
+            while (entryIterator.hasNext()) {
+                Map.Entry<Long, List<K>> entry = entryIterator.next();
                 final Long expireAt = entry.getKey();
                 List<K> expireKeys = entry.getValue();
 
                 // 判断队列是否为空
                 if(expireKeys == null || expireKeys.isEmpty()) {
-                    sortMap.remove(expireAt);
+                    entryIterator.remove();
                     continue;
                 }
                 if(count >= limit) {
@@ -72,6 +74,9 @@ public class CacheExpireSort<K,V> extends AbstractCacheExpire<K,V> {
                         removeExpireKey(key, currentTime);
 
                         count++;
+                    }
+                    if (expireKeys.isEmpty()) {
+                        entryIterator.remove();
                     }
                 } else {
                     // 直接跳过，没有过期的信息
@@ -101,22 +106,8 @@ public class CacheExpireSort<K,V> extends AbstractCacheExpire<K,V> {
             return;
         }
 
-        // 这样维护两套的代价太大，后续优化，暂时不用。
-        // 判断大小，小的作为外循环
-        final int expireSize = expireMap.size();
-        if(expireSize <= keyList.size()) {
-            // 一般过期的数量都是较少的
-            for(Map.Entry<K,Long> entry : expireMap.entrySet()) {
-                K key = entry.getKey();
-
-                // 这里直接执行过期处理，不再判断是否存在于集合中。
-                // 因为基于集合的判断，时间复杂度为 O(n)
-                this.removeExpireKey(key);
-            }
-        } else {
-            for(K key : keyList) {
-                this.removeExpireKey(key);
-            }
+        for(K key : keyList) {
+            this.removeExpireKey(key);
         }
     }
 
@@ -134,8 +125,14 @@ public class CacheExpireSort<K,V> extends AbstractCacheExpire<K,V> {
                 super.removeExpireKey(key, currentTime);
 
                 List<K> expireKeys = sortMap.get(expireTime);
-                expireKeys.remove(key);
-                sortMap.put(expireTime, expireKeys);
+                if(expireKeys != null) {
+                    expireKeys.remove(key);
+                    if(expireKeys.isEmpty()) {
+                        sortMap.remove(expireTime);
+                    } else {
+                        sortMap.put(expireTime, expireKeys);
+                    }
+                }
             }
         }
     }

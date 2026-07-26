@@ -35,7 +35,7 @@ public class CacheEvictClock<K,V> extends AbstractCacheEvict<K,V> {
 
         // 超过限制，移除队尾的元素
         if(isNeedEvict(context)) {
-            CacheEntry<K,V>  evictEntry = circleList.removeEldest();;
+            CacheEntry<K,V>  evictEntry = circleList.removeEldest();
             // 执行缓存移除操作
             final K evictKey = evictEntry.key();
             V evictValue = doEvictRemove(context, evictKey);

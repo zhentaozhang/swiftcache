@@ -5,7 +5,8 @@ import io.swiftcache.core.support.expire.AbstractCacheExpire;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,10 +56,9 @@ public class CacheExpireRandom<K,V> extends AbstractCacheExpire<K,V> {
             //2. 是否启用快模式
             if(fastMode.get()) {
                 expireKeys(10L);
+            } else {
+                expireKeys(100L);
             }
-
-            //3. 缓慢模式
-            expireKeys(100L);
         }
     }
 
@@ -69,10 +69,7 @@ public class CacheExpireRandom<K,V> extends AbstractCacheExpire<K,V> {
      * @since 0.0.16
      */
     private void expireKeys(final long timeoutMills) {
-        // 设置超时时间 100ms
         final long timeLimit = System.currentTimeMillis() + timeoutMills;
-        // 恢复 fastMode
-        this.fastMode.set(false);
 
         final int countLimit = getLimitSize();
 
@@ -91,7 +88,7 @@ public class CacheExpireRandom<K,V> extends AbstractCacheExpire<K,V> {
             }
 
             //2.2 随机过期
-            K key = getRandomKey();
+            K key = getRandomKey2();
             Long expireAt = expireMap.get(key);
             boolean expireFlag = removeExpireKey(key, expireAt);
             log.debug("key: {} 过期执行结果 {}", key, expireFlag);
@@ -102,25 +99,6 @@ public class CacheExpireRandom<K,V> extends AbstractCacheExpire<K,V> {
     }
 
 
-    /**
-     * 随机获取一个 key 信息
-     * @return 随机返回的 keys
-     * @since 0.0.16
-     */
-    private K getRandomKey() {
-        Random random = ThreadLocalRandom.current();
-
-        Set<K> keySet = expireMap.keySet();
-        List<K> list = new ArrayList<>(keySet);
-        int randomIndex = random.nextInt(list.size());
-        return list.get(randomIndex);
-    }
-
-    /**
-     * 随机获取一个 key 信息
-     * @return 随机返回的 keys
-     * @since 0.0.16
-     */
     private K getRandomKey2() {
         Random random = ThreadLocalRandom.current();
         int randomIndex = random.nextInt(expireMap.size());
@@ -133,39 +111,6 @@ public class CacheExpireRandom<K,V> extends AbstractCacheExpire<K,V> {
 
             if(count == randomIndex) {
                 return key;
-            }
-            count++;
-        }
-
-        // 正常逻辑不会到这里
-        throw new CacheRuntimeException("对应信息不存在");
-    }
-
-    /**
-     * 批量获取多个 key 信息
-     * @param sizeLimit 大小限制
-     * @return 随机返回的 keys
-     * @since 0.0.16
-     */
-    private Set<K> getRandomKeyBatch(final int sizeLimit) {
-        Random random = ThreadLocalRandom.current();
-        int randomIndex = random.nextInt(expireMap.size());
-
-        // 遍历 keys
-        Iterator<K> iterator = expireMap.keySet().iterator();
-        int count = 0;
-
-        Set<K> keySet = new HashSet<>();
-        while (iterator.hasNext()) {
-            // 判断列表大小
-            if(keySet.size() >= sizeLimit) {
-                return keySet;
-            }
-
-            K key = iterator.next();
-            // index 向后的位置，全部放进来。
-            if(count >= randomIndex) {
-                keySet.add(key);
             }
             count++;
         }

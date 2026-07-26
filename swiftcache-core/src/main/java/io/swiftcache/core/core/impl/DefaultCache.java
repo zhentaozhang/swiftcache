@@ -5,9 +5,10 @@ import io.swiftcache.api.context.CacheContext;
 import io.swiftcache.api.interceptor.CacheInterceptor;
 import io.swiftcache.api.listener.CacheEvent;
 import io.swiftcache.api.listener.CacheEventType;
-import io.swiftcache.core.constant.enums.CacheInterceptorType;
+import io.swiftcache.core.support.interceptor.CacheInterceptorType;
 import io.swiftcache.core.support.interceptor.DefaultCacheInterceptorContext;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -18,6 +19,46 @@ public class DefaultCache<K,V> implements Cache<K,V> {
     protected CacheContext<K, V> cacheContext;
 
     protected final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private static final List<String> TYPES_EXPIRE = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.EVICT_UPDATE.code(),
+            CacheInterceptorType.AOF.code()
+    );
+    private static final List<String> TYPES_SIZE = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code()
+    );
+    private static final List<String> TYPES_IS_EMPTY = List.of(
+            CacheInterceptorType.COMMON.code()
+    );
+    private static final List<String> TYPES_CONTAINS_KEY = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code(),
+            CacheInterceptorType.EVICT_UPDATE.code()
+    );
+    private static final List<String> TYPES_GET = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code(),
+            CacheInterceptorType.EVICT_UPDATE.code()
+    );
+    private static final List<String> TYPES_PUT = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code(),
+            CacheInterceptorType.EVICT.code(),
+            CacheInterceptorType.EVICT_UPDATE.code(),
+            CacheInterceptorType.AOF.code()
+    );
+    private static final List<String> TYPES_REMOVE = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code(),
+            CacheInterceptorType.EVICT_REMOVE.code(),
+            CacheInterceptorType.AOF.code()
+    );
+    private static final List<String> TYPES_KEY_SET = List.of(
+            CacheInterceptorType.COMMON.code(),
+            CacheInterceptorType.REFRESH.code()
+    );
 
     @Override
     public Cache<K, V> init(CacheContext<K, V> context) {
@@ -74,36 +115,24 @@ public class DefaultCache<K,V> implements Cache<K,V> {
 
     @Override
     public Cache<K, V> expireAt(K key, long unixTime) {
+        Objects.requireNonNull(key, "key");
         lock.writeLock().lock();
         try {
-            Objects.requireNonNull(key, "key");
-
-            var context = doFilterBefore("expireAt",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.EVICT_UPDATE.code(),
-                            CacheInterceptorType.AOF.code()
-                    ),
-                    key, unixTime);
-
+            var context = doFilterBefore("expireAt", TYPES_EXPIRE, key, unixTime);
             cacheContext.expire().expireAt(key, unixTime);
-
             doFilterAfter(context, null);
-
-            fireEvent(CacheEventType.EXPIRE, key, null);
-
-            return this;
         } finally {
             lock.writeLock().unlock();
         }
+        fireEvent(CacheEventType.EXPIRE, key, null);
+        return this;
     }
 
     @Override
     public int size() {
         lock.readLock().lock();
         try {
-            var context = doFilterBefore("size",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code()));
+            var context = doFilterBefore("size", TYPES_SIZE);
 
             int result = cacheContext.map().size();
 
@@ -119,9 +148,7 @@ public class DefaultCache<K,V> implements Cache<K,V> {
     public boolean isEmpty() {
         lock.readLock().lock();
         try {
-            var context = doFilterBefore("isEmpty",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code()));
+            var context = doFilterBefore("isEmpty", TYPES_IS_EMPTY);
 
             boolean result = cacheContext.map().isEmpty();
 
@@ -139,12 +166,7 @@ public class DefaultCache<K,V> implements Cache<K,V> {
         try {
             Objects.requireNonNull(key, "key");
 
-            var context = doFilterBefore("containsKey",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code(),
-                            CacheInterceptorType.EVICT_UPDATE.code()
-                    ),
-                    key);
+            var context = doFilterBefore("containsKey", TYPES_CONTAINS_KEY, key);
 
             boolean result = cacheContext.map().containsKey(key);
 
@@ -162,12 +184,7 @@ public class DefaultCache<K,V> implements Cache<K,V> {
         try {
             Objects.requireNonNull(key, "key");
 
-            var context = doFilterBefore("get",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code(),
-                            CacheInterceptorType.EVICT_UPDATE.code()
-                    ),
-                    key);
+            var context = doFilterBefore("get", TYPES_GET, key);
 
             V result = cacheContext.map().get(key);
 
@@ -181,68 +198,45 @@ public class DefaultCache<K,V> implements Cache<K,V> {
 
     @Override
     public V put(K key, V value) {
+        Objects.requireNonNull(key, "key");
+        V result;
         lock.writeLock().lock();
         try {
-            Objects.requireNonNull(key, "key");
-
-            var context = doFilterBefore("put",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code(),
-                            CacheInterceptorType.EVICT.code(),
-                            CacheInterceptorType.EVICT_UPDATE.code(),
-                            CacheInterceptorType.AOF.code()
-                    ),
-                    key, value);
-
-            V result = cacheContext.map().put(key, value);
-
+            var context = doFilterBefore("put", TYPES_PUT, key, value);
+            result = cacheContext.map().put(key, value);
             doFilterAfter(context, result);
-
-            fireEvent(CacheEventType.PUT, key, value);
-
-            return result;
         } finally {
             lock.writeLock().unlock();
         }
+        fireEvent(CacheEventType.PUT, key, value);
+        return result;
     }
 
     @Override
     public V remove(K key) {
+        Objects.requireNonNull(key, "key");
+        V result;
+        V oldValue;
         lock.writeLock().lock();
         try {
-            Objects.requireNonNull(key, "key");
-
-            var context = doFilterBefore("remove",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code(),
-                            CacheInterceptorType.EVICT_REMOVE.code(),
-                            CacheInterceptorType.AOF.code()
-                    ),
-                    key);
-
-            V oldValue = cacheContext.map().get(key);
-            V result = cacheContext.map().remove(key);
-
+            var context = doFilterBefore("remove", TYPES_REMOVE, key);
+            oldValue = cacheContext.map().get(key);
+            result = cacheContext.map().remove(key);
             doFilterAfter(context, result);
-
-            fireEvent(CacheEventType.REMOVE, key, oldValue);
-
-            return result;
         } finally {
             lock.writeLock().unlock();
         }
+        fireEvent(CacheEventType.REMOVE, key, oldValue);
+        return result;
     }
 
     @Override
     public Set<K> keySet() {
         lock.readLock().lock();
         try {
-            var context = doFilterBefore("keySet",
-                    Arrays.asList(CacheInterceptorType.COMMON.code(),
-                            CacheInterceptorType.REFRESH.code()
-                    ));
+            var context = doFilterBefore("keySet", TYPES_KEY_SET);
 
-            Set<K> result = cacheContext.map().keySet();
+            Set<K> result = new HashSet<>(cacheContext.map().keySet());
 
             doFilterAfter(context, result);
 

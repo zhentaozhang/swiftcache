@@ -82,7 +82,7 @@ public final class CacheBs<K,V> {
     }
 
     public CacheBs<K, V> interceptorList(List<CacheInterceptor<K,V>> interceptorList) {
-        this.interceptorList = interceptorList;
+        this.interceptorList = new ArrayList<>(interceptorList);
         return this;
     }
 

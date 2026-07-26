@@ -8,6 +8,7 @@ import io.swiftcache.core.support.serializer.JacksonSerializer;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -38,6 +39,9 @@ public class CacheLoadDbJson<K,V> extends AbstractCacheLoad<K,V> {
         List<String> lines;
         try {
             lines = Files.readAllLines(Path.of(dbPath));
+        } catch (NoSuchFileException e) {
+            log.warn("[load] path: {} 不存在，跳过加载", dbPath);
+            return;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

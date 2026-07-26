@@ -56,7 +56,7 @@ public class CacheEvictLfu<K,V> extends AbstractCacheEvict<K,V> {
             K evictKey = evictNode.key();
             V evictValue = doEvictRemove(context, evictKey);
 
-            log.debug("淘汰最小频率信息, key: {}, value: {}, freq: {}",
+            if (log.isDebugEnabled()) log.debug("淘汰最小频率信息, key: {}, value: {}, freq: {}",
                     evictKey, evictValue, evictNode.frequency());
             result = new DefaultCacheEntry<>(evictKey, evictValue);
         }
@@ -99,7 +99,7 @@ public class CacheEvictLfu<K,V> extends AbstractCacheEvict<K,V> {
             //1.2 更新最小数据频率
             if (minFreq.get() == frequency && oldSet.isEmpty()) {
                 minFreq.incrementAndGet();
-                log.debug("minFreq 增加为：{}", minFreq.get());
+                if (log.isDebugEnabled()) log.debug("minFreq 增加为：{}", minFreq.get());
             }
             //1.3 更新频率信息
             frequency++;
@@ -134,7 +134,7 @@ public class CacheEvictLfu<K,V> extends AbstractCacheEvict<K,V> {
         }
         set.add(freqNode);
         freqMap.put(frequency, set);
-        log.debug("freq={} 添加元素节点：{}", frequency, freqNode);
+        if (log.isDebugEnabled()) log.debug("freq={} 添加元素节点：{}", frequency, freqNode);
     }
 
     /**
@@ -150,19 +150,29 @@ public class CacheEvictLfu<K,V> extends AbstractCacheEvict<K,V> {
     @Override
     public void removeKey(CacheContext<K, V> context, final K key) {
         FreqNode<K,V> freqNode = this.keyMap.remove(key);
+        if (freqNode == null) {
+            return;
+        }
 
         //1. 根据 key 获取频率
         int freq = freqNode.frequency();
         LinkedHashSet<FreqNode<K,V>> set = this.freqMap.get(freq);
 
         //2. 移除频率中对应的节点
-        set.remove(freqNode);
-        log.debug("freq={} 移除元素节点：{}", freq, freqNode);
+        if (set != null) {
+            set.remove(freqNode);
+            if (log.isDebugEnabled()) log.debug("freq={} 移除元素节点：{}", freq, freqNode);
+        }
 
         //3. 更新 minFreq
-        if((set == null || set.isEmpty()) && minFreq.get() == freq) {
-            minFreq.decrementAndGet();
-            log.debug("minFreq 降低为：{}", minFreq.get());
+        if (minFreq.get() == freq && (set == null || set.isEmpty())) {
+            // 从 1 向上查找第一个非空频次
+            int newMin = 1;
+            while (freqMap.get(newMin) == null || freqMap.get(newMin).isEmpty()) {
+                newMin++;
+            }
+            minFreq.set(newMin);
+            if (log.isDebugEnabled()) log.debug("minFreq 更新为：{}", minFreq.get());
         }
     }
 
